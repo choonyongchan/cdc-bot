@@ -12,8 +12,8 @@ class selenium_common:
 
     def is_elem_present(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int = 2):
         try:
-            selenium_common.wait_for_elem(driver, locator_type, locator, timeout)
-            return True
+            elem = selenium_common.wait_for_elem(driver, locator_type, locator, timeout)
+            return elem
         except selenium_common.TimeoutException:
             return False
 
@@ -76,8 +76,9 @@ class utils:
         return key in dic
 
     def concat_tuple(output_tuple):
+        output_tuple = [str(m) for m in output_tuple]
         return ' '.join(output_tuple)
-
+    
     def clear_directory(directory: str, log=DEFAULT_LOG):
         does_dir_exist = utils.os.path.isdir(directory)
         if not does_dir_exist:
