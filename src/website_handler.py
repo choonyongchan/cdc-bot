@@ -23,7 +23,7 @@ def convert_to_datetime(date_str: str, time_str: str = None):
 
 
 class handler(CDCAbstract):
-    def __init__(self, login_credentials, captcha_solver, log, notification_manager, browser_config, program_config):
+    def __init__(self, login_credentials, captcha_solver, log, telegram_bot, browser_config, program_config):
         browser_type = browser_config["type"] or "firefox"
         headless = browser_config["headless_mode"] or False
 
@@ -37,7 +37,7 @@ class handler(CDCAbstract):
 
         self.captcha_solver = captcha_solver
         self.log = log
-        self.notification_manager = notification_manager
+        self.telegram_bot = telegram_bot
 
         self.browser_config = browser_config
         self.program_config = program_config
@@ -405,7 +405,7 @@ class handler(CDCAbstract):
         time.sleep(2)
         if selenium_common.is_elem_present(self.driver, By.ID, "ctl00_ContentPlaceHolder1_lblFullBookMsg"):
             self.log.info("No available practical lessons currently.")
-            self.notification_manager.send_notification_all(title="", msg="No available practical lessons currently")
+            #self.telegram_bot.send_msg(title="", msg="No available practical lessons currently") #Silent operation
             return False
 
         # Check if the user is able to book from other teams
@@ -443,7 +443,7 @@ class handler(CDCAbstract):
                         self.get_all_session_date_times(Types.PRACTICAL)
                         self.get_all_available_sessions(Types.PRACTICAL)
 
-                self.notification_manager.send_notification_all(
+                self.telegram_bot.send_msg(
                     title=f"SESSIONS FROM OTHER TEAMS DETECTED",
                     msg=available_teams_str
                 )
@@ -665,13 +665,13 @@ class handler(CDCAbstract):
 
     def flush_notification_update(self):
         if self.notification_update_msg != "":
-            self.notification_manager.send_notification_all(
+            self.telegram_bot.send_msg(
                 title=f"{datetime.datetime.now()}",
                 msg=self.notification_update_msg
             )
 
             if self.has_slots_reserved:
-                self.notification_manager.send_notification_all(
+                self.telegram_bot.send_msg(
                     title=f"RESERVED SLOTS DETECTED",
                     msg="You have outstanding slots reserved! "
                         "Please log in to the website and confirm these reservations else they will be forfeited."

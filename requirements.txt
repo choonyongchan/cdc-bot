@@ -1,5 +1,6 @@
 requests
-selenium 
+selenium==3.14.1
 pyyaml
 python-telegram-bot
 2captcha-python
+urllib3==1.26.15

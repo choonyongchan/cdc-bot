@@ -9,8 +9,8 @@ from src.website_handler import handler
 
 from src.utils.common import utils
 from src.utils.log import Log
-from src.utils.captcha.two_captcha import Captcha as TwoCaptcha
-from src.utils.notifications.notification_manager import NotificationManager
+from utils.two_captcha import Captcha as TwoCaptcha
+from utils.telegram_bot import TelegramBot
 
 if __name__ == "__main__":
     config = utils.load_config_from_yaml_file(file_path="config.yaml")
@@ -18,8 +18,7 @@ if __name__ == "__main__":
 
     log = Log(directory="logs", name="cdc-helper", config=config["log_config"])
     captcha_solver = TwoCaptcha(log=log, config=config["two_captcha_config"])
-    notification_manager = NotificationManager(log=log, mail_config=config["mail_config"],
-                                               telegram_config=config["telegram_config"])
+    telegram_bot = TelegramBot(telegram_config=config["telegram_config"])
 
     if not os.path.exists("temp"):
         os.makedirs("temp")
@@ -31,7 +30,7 @@ if __name__ == "__main__":
                 login_credentials=config["cdc_login_credentials"],
                 captcha_solver=captcha_solver,
                 log=log,
-                notification_manager=notification_manager,
+                telegram_bot=telegram_bot,
                 browser_config=config["browser_config"],
                 program_config=program_config
         ) as cdc_handler:
@@ -85,7 +84,7 @@ if __name__ == "__main__":
                 log.info("Program stopped by user.")
             except Exception as e:
                 log.error(f"Program encountered an error: {e}")
-                notification_manager.send_notification_all(title="", msg=f"Program encountered an error: {e}")
+                telegram_bot.send_msg(title="", msg=f"Program encountered an error: {e}")
             finally:
                 cdc_handler.account_logout()
                 # cdc_handler.driver.quit()
@@ -95,11 +94,11 @@ if __name__ == "__main__":
 
                 sleep_duration = datetime.timedelta(hours=1)
                 message = f"Program restarting in {sleep_duration} at {datetime.datetime.now() + sleep_duration}..."
-                notification_manager.send_notification_all(title="", msg=message)
+                telegram_bot.send_msg(title="", msg=message)
                 log.info(message +
                          "\n# ------------------------------------- - ------------------------------------ #\n\n")
                 time.sleep(sleep_duration.total_seconds())
                 continue
 
     log.info("Program exited.")
-    notification_manager.send_notification_all(title="", msg="Program exited.")
+    telegram_bot.send_msg(title="", msg="Program exited.")

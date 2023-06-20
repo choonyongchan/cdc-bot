@@ -5,28 +5,31 @@ class selenium_common:
     from selenium.common.exceptions import TimeoutException
 
     def wait_for_elem(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int = 5):
-        return selenium_common.WebDriverWait(driver, timeout).until(
-            selenium_common.EC.presence_of_element_located((locator_type, locator)))
+        webdriverwait = selenium_common.WebDriverWait(driver, timeout)
+        expected_cond = selenium_common.EC.presence_of_element_located((locator_type, locator))
+        elem = webdriverwait.until(expected_cond)
+        return elem
 
     def is_elem_present(driver: selenium.webdriver, locator_type: str, locator: str, timeout: int = 2):
         try:
-            return selenium_common.wait_for_elem(driver, locator_type, locator, timeout)
+            selenium_common.wait_for_elem(driver, locator_type, locator, timeout)
+            return True
         except selenium_common.TimeoutException:
             return False
 
     def dismiss_alert(driver: selenium.webdriver, timeout: int = 2):
         alert_txt = ""
         try:
-            selenium_common.WebDriverWait(driver, timeout).until(selenium_common.EC.alert_is_present())
+            webdriver = selenium_common.WebDriverWait(driver, timeout)
+            expected_cond = selenium_common.EC.alert_is_present()
+            webdriver.until(expected_cond)
+            
             alert = driver.switch_to.alert
-            if alert:
-                alert_txt = alert.text
-                alert.accept()
-
+            alert_txt = alert.text
+            alert.accept()
+            return True, alert_txt
         except Exception as e:
             return False, str(e)
-        else:
-            return True, alert_txt
 
 
 class utils:
@@ -47,8 +50,10 @@ class utils:
             print("[WARN]", utils.concat_tuple(args))
 
     def load_config_from_yaml_file(file_path: str, log=DEFAULT_LOG):
-        if not utils.os.path.isfile(file_path):
+        does_file_exist = utils.os.path.isfile(file_path)
+        if not does_file_exist:
             raise Exception(f"No file found at {file_path}")
+        
         with open(file_path) as stream:
             config = {}
             try:
@@ -59,33 +64,25 @@ class utils:
 
     def init_config_with_default(config: dict, default_config: dict):
         for configValue, configType in enumerate(default_config):
-            if not utils.check_key_existence_in_dict(config, configType):
+            is_key_in_dict = utils.check_key_existence_in_dict(config, configType)
+            if not is_key_in_dict:
                 config[configType] = configValue
         return config
 
     def check_key_value_pair_exist_in_dict(dic, key, value):
-        try:
-            return dic[key] == value
-        except KeyError:
-            return False
+        return (key in dic and dic[key] == value)
 
     def check_key_existence_in_dict(dic, key):
-        try:
-            _ = dic[key]
-            return True
-        except KeyError:
-            return False
+        return key in dic
 
-    def concat_tuple(ouput_tuple):
-        result = ""
-        for m in ouput_tuple:
-            result += str(m) + ' '
-
-        return result
+    def concat_tuple(output_tuple):
+        return ' '.join(output_tuple)
 
     def clear_directory(directory: str, log=DEFAULT_LOG):
-        if not utils.os.path.isdir(directory):
-            return log.error(f"Directory: {utils.os.path.join(utils.os.getcwd(), directory)} does not exist.")
+        does_dir_exist = utils.os.path.isdir(directory)
+        if not does_dir_exist:
+            path = utils.os.path.join(utils.os.getcwd(), directory)
+            return log.error(f"Directory: {path} does not exist.")
 
         for filename in utils.os.listdir(directory):
             file_path = utils.os.path.join(directory, filename)
@@ -123,7 +120,8 @@ class utils:
     }
 
     def get_date_formatter(format_option, default_format_option):
-        if utils.check_key_existence_in_dict(utils.date_formatter, format_option):
+        is_key_in_dict = utils.check_key_existence_in_dict(utils.date_formatter, format_option)
+        if is_key_in_dict:
             return utils.date_formatter[format_option]
         else:
             return utils.date_formatter[default_format_option]
